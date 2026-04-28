@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Oakcraft</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --oak-cream: #f5efe6;
+    --oak-warm: #ebe2d3;
+    --oak-bark: #3a2a1a;
+    --oak-deep: #1a120a;
+    --oak-amber: #b8742d;
+    --oak-amber-light: #d89456;
+    --oak-amber-dark: #8a5320;
+    --oak-line: #d9cdb8;
+    --oak-text: #2b2018;
+    --oak-muted: #7a6a58;
+    --oak-success: #4a7c4a;
+    --whatsapp: #25d366;
+    --whatsapp-dark: #1ea952;
+
+    --shadow-soft: 0 4px 14px rgba(58, 42, 26, 0.08);
+    --shadow-pop: 0 18px 50px rgba(58, 42, 26, 0.22);
+    --shadow-deep: 0 25px 70px rgba(26, 18, 10, 0.35);
+
+    --font-display: "Fraunces", Georgia, serif;
+    --font-body: "Inter", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: transparent; }
+  body { font-family: var(--font-body); }
+
+  /* Launchers */
+  .oc-launcher-group {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 999998;
+    display: flex; flex-direction: column;
+    gap: 14px; align-items: flex-end;
+  }
+  .oc-launcher-btn {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-pop);
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
+  }
+  .oc-launcher-btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: var(--shadow-deep); }
+  .oc-launcher-btn:active { transform: translateY(-1px) scale(1.02); }
+  .oc-launcher-btn svg { width: 28px; height: 28px; }
+
+  #oc-launcher {
+    background: linear-gradient(135deg, var(--oak-deep) 0%, var(--oak-bark) 100%);
+    color: var(--oak-cream);
+  }
+  #oc-launcher::after {
+    content: ""; position: absolute; inset: 0;
+    border-radius: 50%; border: 2px solid var(--oak-amber);
+    opacity: 0.6; animation: pulseRing 2.4s ease-out infinite;
+  }
+  @keyframes pulseRing {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  #oc-wa-launcher { background: var(--whatsapp); color: white; }
+  #oc-wa-launcher:hover { background: var(--whatsapp-dark); }
+  #oc-wa-launcher::after {
+    content: "WhatsApp";
+    position: absolute; right: 72px; top: 50%;
+    transform: translateY(-50%);
+    background: var(--oak-deep); color: var(--oak-cream);
+    padding: 6px 12px; border-radius: 8px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  #oc-wa-launcher:hover::after { opacity: 1; }
+
+  .oc-badge {
+    position: absolute; top: -2px; right: -2px;
+    background: #e74c3c; color: white;
+    font-size: 10px; font-weight: 700;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid white;
+    animation: badgePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes badgePop { from { transform: scale(0); } to { transform: scale(1); } }
+
+  /* Chat window */
+  #oc-chat {
+    position: fixed; bottom: 100px; right: 24px;
+    width: 400px; max-width: calc(100vw - 32px);
+    height: 640px; max-height: calc(100vh - 130px);
+    background: var(--oak-cream);
+    border-radius: 20px;
+    box-shadow: var(--shadow-deep);
+    display: none;
+    flex-direction: column; overflow: hidden;
+    z-index: 999999;
+    border: 1px solid var(--oak-line);
+  }
+  #oc-chat.open { display: flex; animation: chatSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+  #oc-chat.closing { animation: chatSlideOut 0.25s ease-in forwards; }
+  @keyframes chatSlideIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.94); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes chatSlideOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(20px) scale(0.96); }
+  }
+
+  /* Header */
+  .oc-header {
+    background: linear-gradient(135deg, var(--oak-deep) 0%, var(--oak-bark) 100%);
+    color: var(--oak-cream);
+    padding: 16px 16px 14px;
+    position: relative; overflow: hidden;
+  }
+  .oc-header::before {
+    content: ""; position: absolute;
+    top: -40%; left: -10%; width: 60%; height: 200%;
+    background: radial-gradient(circle, rgba(184, 116, 45, 0.18) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .oc-header::after {
+    content: ""; position: absolute;
+    left: 0; right: 0; bottom: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--oak-amber), transparent);
+  }
+  .oc-header-top { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+  .oc-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--oak-amber-light), var(--oak-amber));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 700;
+    color: var(--oak-deep); font-size: 18px;
+    box-shadow: 0 4px 10px rgba(184, 116, 45, 0.3);
+    flex-shrink: 0;
+  }
+  .oc-title { flex: 1; min-width: 0; }
+  .oc-title h3 {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 17px; letter-spacing: -0.01em; line-height: 1.2;
+  }
+  .oc-status {
+    font-size: 11px; color: rgba(245, 239, 230, 0.75);
+    display: flex; align-items: center; gap: 6px; margin-top: 3px;
+  }
+  .oc-dot {
+    width: 7px; height: 7px; background: #6abf6a; border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(106, 191, 106, 0.6);
+    animation: ping 2s infinite;
+  }
+  @keyframes ping {
+    0% { box-shadow: 0 0 0 0 rgba(106, 191, 106, 0.6); }
+    70% { box-shadow: 0 0 0 6px rgba(106, 191, 106, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(106, 191, 106, 0); }
+  }
+  .oc-header-actions { display: flex; gap: 4px; align-items: center; }
+  .oc-icon-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--oak-cream); cursor: pointer;
+    padding: 7px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .oc-icon-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.05); }
+  .oc-icon-btn svg { width: 16px; height: 16px; }
+  .oc-wa-header-btn { background: var(--whatsapp); border-color: var(--whatsapp); color: white; }
+  .oc-wa-header-btn:hover { background: var(--whatsapp-dark); border-color: var(--whatsapp-dark); }
+
+  .oc-lang {
+    background: rgba(255,255,255,0.08); color: var(--oak-cream);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; padding: 6px 8px;
+    font-size: 11px; cursor: pointer;
+    font-family: var(--font-body); outline: none;
+    transition: background 0.2s;
+  }
+  .oc-lang:hover { background: rgba(255,255,255,0.14); }
+  .oc-lang option { background: var(--oak-deep); color: var(--oak-cream); }
+
+  /* Messages */
+  .oc-messages {
+    flex: 1; overflow-y: auto;
+    padding: 18px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    background:
+      radial-gradient(800px 400px at 50% 0%, rgba(184, 116, 45, 0.06) 0%, transparent 70%),
+      var(--oak-cream);
+    scroll-behavior: smooth;
+  }
+  .oc-messages::-webkit-scrollbar { width: 5px; }
+  .oc-messages::-webkit-scrollbar-track { background: transparent; }
+  .oc-messages::-webkit-scrollbar-thumb { background: var(--oak-line); border-radius: 3px; }
+  .oc-messages::-webkit-scrollbar-thumb:hover { background: var(--oak-muted); }
+
+  .oc-msg {
+    max-width: 86%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px; line-height: 1.5;
+    word-wrap: break-word;
+    animation: msgIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .oc-msg.bot {
+    background: white; color: var(--oak-text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(217, 205, 184, 0.6);
+  }
+  .oc-msg.user {
+    background: linear-gradient(135deg, var(--oak-deep), var(--oak-bark));
+    color: var(--oak-cream); align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 6px rgba(26, 18, 10, 0.15);
+  }
+  .oc-msg a { color: var(--oak-amber); text-decoration: underline; text-underline-offset: 2px; }
+  .oc-msg.user a { color: #f0c890; }
+
+  /* Product cards */
+  .oc-products {
+    display: flex; flex-direction: column; gap: 10px;
+    width: 100%; align-self: stretch;
+    animation: msgIn 0.4s ease;
+  }
+  .oc-product {
+    background: white; border: 1px solid var(--oak-line);
+    border-radius: 14px; padding: 10px;
+    display: flex; gap: 12px;
+    text-decoration: none; color: var(--oak-text);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s;
+    box-shadow: var(--shadow-soft);
+    position: relative; overflow: hidden;
+  }
+  .oc-product::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(184, 116, 45, 0.06) 50%, transparent 70%);
+    transform: translateX(-100%); transition: transform 0.6s;
+  }
+  .oc-product:hover {
+    transform: translateY(-3px);
+    border-color: var(--oak-amber);
+    box-shadow: 0 10px 24px rgba(58, 42, 26, 0.14);
+  }
+  .oc-product:hover::before { transform: translateX(100%); }
+  .oc-product img {
+    width: 84px; height: 84px;
+    object-fit: cover; border-radius: 10px;
+    background: var(--oak-warm); flex-shrink: 0;
+  }
+  .oc-product-info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
+  }
+  .oc-product h4 {
+    font-family: var(--font-display);
+    font-size: 13.5px; font-weight: 600;
+    color: var(--oak-deep); line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .oc-product-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .oc-product-price {
+    font-size: 14px; font-weight: 700; color: var(--oak-amber-dark);
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .oc-product-price .compare {
+    font-size: 11px; color: var(--oak-muted);
+    text-decoration: line-through; font-weight: 400;
+  }
+  .oc-product-source {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--oak-muted); background: var(--oak-warm);
+    padding: 2px 6px; border-radius: 999px;
+  }
+  .oc-product-source.sheet { color: var(--oak-success); background: rgba(74, 124, 74, 0.1); }
+
+  /* Typing */
+  .oc-typing {
+    align-self: flex-start; background: white;
+    border: 1px solid var(--oak-line); border-radius: 16px;
+    border-bottom-left-radius: 4px; padding: 12px 16px;
+    display: flex; gap: 4px;
+    box-shadow: var(--shadow-soft);
+  }
+  .oc-typing span {
+    width: 7px; height: 7px;
+    background: var(--oak-muted); border-radius: 50%;
+    animation: bounce 1.3s infinite;
+  }
+  .oc-typing span:nth-child(2) { animation-delay: 0.15s; }
+  .oc-typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Quick replies */
+  .oc-quick-replies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .oc-quick-replies button {
+    background: white; border: 1px solid var(--oak-line);
+    color: var(--oak-bark);
+    font-family: var(--font-body); font-size: 12px; font-weight: 500;
+    padding: 7px 12px; border-radius: 999px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .oc-quick-replies button:hover {
+    background: var(--oak-amber); border-color: var(--oak-amber);
+    color: white; transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(184, 116, 45, 0.25);
+  }
+
+  /* WhatsApp CTA */
+  .oc-wa-cta {
+    align-self: stretch;
+    background: linear-gradient(135deg, var(--whatsapp) 0%, var(--whatsapp-dark) 100%);
+    color: white; border: none; border-radius: 14px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; font-family: var(--font-body);
+    font-size: 13px; font-weight: 500;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+    animation: msgIn 0.4s ease;
+  }
+  .oc-wa-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4); }
+  .oc-wa-cta-icon {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.2); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .oc-wa-cta-icon svg { width: 18px; height: 18px; }
+  .oc-wa-cta-text { flex: 1; line-height: 1.3; }
+  .oc-wa-cta-text strong { display: block; font-weight: 600; font-size: 14px; }
+  .oc-wa-cta-text small { opacity: 0.9; font-size: 11px; }
+
+  /* Input */
+  .oc-input-wrap {
+    border-top: 1px solid var(--oak-line);
+    background: white; padding: 10px 12px;
+    display: flex; gap: 8px; align-items: flex-end;
+  }
+  .oc-input {
+    flex: 1; border: 1.5px solid var(--oak-line);
+    background: var(--oak-cream);
+    border-radius: 14px; padding: 10px 14px;
+    font-family: var(--font-body); font-size: 14px; color: var(--oak-text);
+    resize: none; max-height: 100px; line-height: 1.4;
+    outline: none; transition: border-color 0.2s, background 0.2s;
+  }
+  .oc-input:focus { border-color: var(--oak-amber); background: white; }
+  .oc-action-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .oc-mic { background: var(--oak-warm); color: var(--oak-bark); }
+  .oc-mic:hover { background: var(--oak-line); transform: scale(1.05); }
+  .oc-mic.recording {
+    background: #e74c3c; color: white;
+    animation: micPulse 1s infinite;
+  }
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
+  }
+  .oc-send {
+    background: linear-gradient(135deg, var(--oak-amber-light), var(--oak-amber));
+    color: white; box-shadow: 0 3px 10px rgba(184, 116, 45, 0.3);
+  }
+  .oc-send:hover {
+    background: var(--oak-amber-dark);
+    transform: scale(1.05);
+    box-shadow: 0 5px 14px rgba(184, 116, 45, 0.4);
+  }
+  .oc-action-btn svg { width: 17px; height: 17px; }
+
+  .oc-footer {
+    text-align: center; font-size: 10.5px;
+    color: var(--oak-muted);
+    padding: 6px 0 10px; background: white;
+    letter-spacing: 0.05em;
+    border-top: 1px solid rgba(217, 205, 184, 0.4);
+  }
+  .oc-footer span { color: var(--oak-amber-dark); font-weight: 600; }
+
+  @media (max-width: 480px) {
+    #oc-chat {
+      bottom: 0; right: 0; left: 0; top: 0;
+      width: 100%; height: 100%; max-height: 100%;
+      border-radius: 0;
+    }
+    .oc-launcher-group { bottom: 16px; right: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Launcher group -->
+<div class="oc-launcher-group">
+  <button id="oc-wa-launcher" class="oc-launcher-btn" aria-label="WhatsApp" title="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.9L4 20l4.2-1.1a7.93 7.93 0 0 0 3.84.98h.01a7.94 7.94 0 0 0 7.94-7.94 7.9 7.9 0 0 0-2.39-5.62zm-5.55 12.21a6.6 6.6 0 0 1-3.36-.92l-.24-.14-2.5.65.67-2.43-.16-.25a6.6 6.6 0 0 1-1-3.5 6.6 6.6 0 0 1 11.27-4.67 6.55 6.55 0 0 1 1.93 4.68 6.6 6.6 0 0 1-6.61 6.58zm3.62-4.93c-.2-.1-1.17-.58-1.35-.65-.18-.06-.31-.1-.45.1-.13.2-.51.65-.63.78-.11.13-.23.15-.43.05a5.4 5.4 0 0 1-1.6-.99 5.97 5.97 0 0 1-1.1-1.37c-.12-.2-.01-.3.09-.4.1-.1.2-.23.3-.34.1-.12.13-.2.2-.33.07-.13.03-.25-.02-.35-.05-.1-.45-1.08-.61-1.48-.16-.39-.33-.34-.45-.34l-.39-.01a.74.74 0 0 0-.54.25 2.25 2.25 0 0 0-.71 1.68c0 .99.72 1.95.82 2.08.1.13 1.42 2.17 3.43 3.04.48.21.85.33 1.14.42.48.15.92.13 1.27.08.39-.06 1.18-.49 1.35-.96.16-.46.16-.86.12-.95-.05-.08-.18-.13-.38-.23z"/>
+    </svg>
+  </button>
+  <button id="oc-launcher" class="oc-launcher-btn" aria-label="Open chat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <span class="oc-badge" id="oc-badge" style="display:none">1</span>
+  </button>
+</div>
+
+<!-- Chat window -->
+<div id="oc-chat" role="dialog" aria-label="Oakcraft chat">
+  <div class="oc-header">
+    <div class="oc-header-top">
+      <div class="oc-avatar">O</div>
+      <div class="oc-title">
+        <h3>Oakcraft Support</h3>
+        <div class="oc-status"><span class="oc-dot"></span> <span>Online · Replies instantly</span></div>
+      </div>
+      <div class="oc-header-actions">
+        <select class="oc-lang" id="oc-lang" aria-label="Language">
+          <option value="auto">🌐 Auto</option>
+          <option value="en">English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="hinglish">Hinglish</option>
+          <option value="mr">मराठी</option>
+          <option value="gu">ગુજરાતી</option>
+          <option value="hr">Haryanvi</option>
+        </select>
+        <button class="oc-icon-btn oc-wa-header-btn" id="oc-wa-header" aria-label="WhatsApp">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.9L4 20l4.2-1.1a7.93 7.93 0 0 0 3.84.98h.01a7.94 7.94 0 0 0 7.94-7.94 7.9 7.9 0 0 0-2.39-5.62zm-5.55 12.21a6.6 6.6 0 0 1-3.36-.92l-.24-.14-2.5.65.67-2.43-.16-.25a6.6 6.6 0 0 1-1-3.5 6.6 6.6 0 0 1 11.27-4.67 6.55 6.55 0 0 1 1.93 4.68 6.6 6.6 0 0 1-6.61 6.58zm3.62-4.93c-.2-.1-1.17-.58-1.35-.65-.18-.06-.31-.1-.45.1-.13.2-.51.65-.63.78-.11.13-.23.15-.43.05a5.4 5.4 0 0 1-1.6-.99 5.97 5.97 0 0 1-1.1-1.37c-.12-.2-.01-.3.09-.4.1-.1.2-.23.3-.34.1-.12.13-.2.2-.33.07-.13.03-.25-.02-.35-.05-.1-.45-1.08-.61-1.48-.16-.39-.33-.34-.45-.34l-.39-.01a.74.74 0 0 0-.54.25 2.25 2.25 0 0 0-.71 1.68c0 .99.72 1.95.82 2.08.1.13 1.42 2.17 3.43 3.04.48.21.85.33 1.14.42.48.15.92.13 1.27.08.39-.06 1.18-.49 1.35-.96.16-.46.16-.86.12-.95-.05-.08-.18-.13-.38-.23z"/>
+          </svg>
+        </button>
+        <button class="oc-icon-btn" id="oc-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="oc-messages" id="oc-messages"></div>
+
+  <div class="oc-input-wrap">
+    <textarea id="oc-input" class="oc-input" placeholder="Type your question..." rows="1"></textarea>
+    <button id="oc-mic" class="oc-action-btn oc-mic" aria-label="Voice input" title="Voice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </button>
+    <button id="oc-send" class="oc-action-btn oc-send" aria-label="Send">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  <div class="oc-footer">Powered by <span>Oakcraft AI</span></div>
+</div>
+
+<script>
+/* ================================================================
+   OAKCRAFT CHATBOT v4 - Conversational AI
+   - Built-in product database (no CORS issues)
+   - Live fetch from oakcraft.in when deployed (graceful fallback)
+   - Conversational behavior: bot talks like a person
+   - Context-aware: remembers conversation
+   - 6 languages with auto-detect
+   ================================================================ */
+
+
+// ================================================================
+// CONFIG
+// ================================================================
+const CONFIG = {
+  storeUrl: "https://oakcraft.in",
+  googleSheetCsvUrl: "",  // Add Google Sheet CSV URL here when ready
+  whatsappNumber: "918700540830",
+  whatsappDefaultMessage: "Hi Oakcraft! I have a question.",
+  maxProducts: 6,
+  contact: { phone: "+91 8700540830", email: "contact@oakcraft.in" },
+  showWelcomeBadge: true,
+  welcomeBadgeDelay: 3000,
+  // Try to fetch live products from website (works only when deployed on same domain)
+  enableLiveFetch: true
+};
+
+
+// ================================================================
+// BUILT-IN PRODUCT DATABASE
+// Real products from oakcraft.in — works offline, no CORS issues
+// When chatbot is deployed on oakcraft.in, it ALSO fetches latest
+// products live and merges them with this list
+// ================================================================
+const BUILTIN_PRODUCTS = [
+  {
+    name: "Oakcraft Blaze High Back Leatherette Gaming Chair",
+    price: "₹8,499",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/81WtPofqMwS__AC_SL1500__jpg_b23398ef-718b-4017-b3ab-2863b8cd873a_533x.png?v=1709533000",
+    url: "https://oakcraft.in/products/oakcraft-blaze-high-back-leatherette-gaming-chair",
+    tags: "gaming chair leatherette high back",
+    category: "gaming"
+  },
+  {
+    name: "Oakcraft Batman High Back Leatherette Gaming Chair",
+    price: "₹8,400",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/Untitleddesign-2024-02-23T162923.122_533x.png?v=1709448912",
+    url: "https://oakcraft.in/products/oakcraft-batman-high-back-leatherette-gaming-chair",
+    tags: "gaming chair batman leatherette",
+    category: "gaming"
+  },
+  {
+    name: "Oakcraft Hurricane High Back Ergonomic Mesh Office Chair",
+    price: "₹7,549",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/1_e130fb3b-872d-4929-bb09-b69b77f321ea_533x.jpg?v=1708279932",
+    url: "https://oakcraft.in/products/oakcraft-hurricane-high-back-ergonomic-mesh-office-chair",
+    tags: "office chair mesh ergonomic high back executive",
+    category: "office"
+  },
+  {
+    name: "Oakcraft Cute Office Chair Mid Back 360° Swivel",
+    price: "₹5,399",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/Beige_533x.jpg?v=1751189673",
+    url: "https://oakcraft.in/products/oakcraft-cute-office-chair-home-computer-chairs-adjustable-task-chairs-modern-office-chair-makeup-360-swivel-computer-mid-back-chair",
+    tags: "office chair task chair mid back computer",
+    category: "office"
+  },
+  {
+    name: "Oakcraft Steller Lounge/Dining/Accent Chairs (Set of 2)",
+    price: "₹5,999",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/FinishColor-Cyan_acb18191-d90e-4785-8f6d-f99e8b3cd11d_533x.png?v=1712912620",
+    url: "https://oakcraft.in/products/oakcraft-velvet-lounge-dinning-accent-chairs-with-engineered-metal-legs-metal-living-room-chair",
+    tags: "accent chair lounge dining living room velvet",
+    category: "accent"
+  },
+  {
+    name: "OAKCRAFT Flower Dining Chair / Accent Chair",
+    price: "₹5,999",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/babypink_533x.png?v=1714888136",
+    url: "https://oakcraft.in/products/oakcraft-flower-dining-chair-accent-chair-for-living-room-bedroom-restaurant-velvet-fabric-cushion-seat-with-gold-metal-legs",
+    tags: "accent chair dining velvet flower",
+    category: "accent"
+  },
+  {
+    name: "Oakcraft 3 Tier Multipurpose Storage Unit / Bookshelf",
+    price: "₹2,599",
+    comparePrice: "₹4,999",
+    image: "https://oakcraft.in/cdn/shop/files/Untitleddesign-2024-03-04T233856.048_533x.png?v=1709619799",
+    url: "https://oakcraft.in/products/oakcraft-3-tier-multipurpose-storage-unit-engineered-wood-open-book-shelf",
+    tags: "bookshelf shelf storage wooden engineered wood multipurpose",
+    category: "shelf"
+  },
+  {
+    name: "Oakcraft Multipurpose Single Cube Storage Organizer",
+    price: "₹6,499",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/1_ad440637-7781-4964-bc3f-77232517cded_533x.jpg?v=1724663469",
+    url: "https://oakcraft.in/products/oakcraft-multipurpose-single-cube-storage-organizer-unit-bed-side-table-type-rack-diy-shelf-cabinet-space-saver",
+    tags: "storage cabinet shelf bed side table rack",
+    category: "shelf"
+  },
+  {
+    name: "Oakcraft Simple Bookshelf / Multipurpose Rack",
+    price: "₹2,999",
+    comparePrice: "",
+    image: "https://oakcraft.in/cdn/shop/files/61wTd32qanL._AC_SL1500_533x.jpg?v=1714028009",
+    url: "https://oakcraft.in/products/oakcraft-simple-bookshelf-multipurpose-rack-children-bookcases-file-rack-for-office-storage-organizer-cabinet-shelves-for-bedroom-office-living-room-metal-open-book-shelf",
+    tags: "bookshelf rack metal storage office bedroom",
+    category: "shelf"
+  },
+  {
+    name: "Oakcraft 3 Tier Engineered Wood Open Book Shelf",
+    price: "₹2,599",
+    comparePrice: "₹4,999",
+    image: "https://oakcraft.in/cdn/shop/files/Untitleddesign-2024-02-22T112010.880_533x.png?v=1711277655",
+    url: "https://oakcraft.in/products/oakcraft-3-tier-multipurpose-storage-unit-engineered-wood-open-book-shelf-1",
+    tags: "bookshelf shelf engineered wood storage cube",
+    category: "shelf"
+  }
+];
+
+let liveProducts = [];        // Fetched from Shopify when possible
+let sheetProducts = [];       // Fetched from Google Sheet when configured
+
+// Pre-warm: try to fetch live products silently. If it fails (CORS or
+// offline), we just use the built-in catalog. No user-visible error.
+async function tryFetchLiveProducts() {
+  if (!CONFIG.enableLiveFetch) return;
+  try {
+    const res = await fetch(CONFIG.storeUrl + '/products.json?limit=250');
+    if (!res.ok) return;
+    const data = await res.json();
+    liveProducts = (data.products || []).map(p => ({
+      name: p.title,
+      price: p.variants?.[0]?.price ? '₹' + Math.round(parseFloat(p.variants[0].price)).toLocaleString('en-IN') : '',
+      comparePrice: p.variants?.[0]?.compare_at_price ? '₹' + Math.round(parseFloat(p.variants[0].compare_at_price)).toLocaleString('en-IN') : '',
+      image: p.images?.[0]?.src || '',
+      url: CONFIG.storeUrl + '/products/' + p.handle,
+      tags: ((p.tags || '') + ' ' + (p.product_type || '')).toLowerCase(),
+      category: detectCategory(p.title + ' ' + (p.tags || '') + ' ' + (p.product_type || ''))
+    }));
+  } catch (e) {
+    // Silent — built-in catalog is the fallback
+  }
+}
+
+async function tryFetchSheetProducts() {
+  if (!CONFIG.googleSheetCsvUrl) return;
+  try {
+    const res = await fetch(CONFIG.googleSheetCsvUrl);
+    if (!res.ok) return;
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+    if (rows.length < 2) return;
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    sheetProducts = rows.slice(1).filter(r => r.length >= 2).map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = (r[i] || '').trim());
+      return {
+        name: obj.name || obj.product || obj.title || '',
+        price: obj.price ? (String(obj.price).startsWith('₹') ? obj.price : '₹' + obj.price) : '',
+        comparePrice: '',
+        image: obj.image || obj.image_url || obj.img || '',
+        url: obj.url || obj.link || '#',
+        tags: ((obj.category || '') + ' ' + (obj.name || '')).toLowerCase(),
+        category: (obj.category || '').toLowerCase(),
+        source: 'sheet'
+      };
+    }).filter(p => p.name);
+  } catch (e) {
+    // Silent fallback
+  }
+}
+
+function detectCategory(text) {
+  const t = text.toLowerCase();
+  if (/gaming|gamer|racing/.test(t)) return 'gaming';
+  if (/recliner/.test(t)) return 'recliner';
+  if (/stool|bar/.test(t)) return 'stool';
+  if (/accent|dining|lounge|velvet/.test(t)) return 'accent';
+  if (/shelf|book|storage|rack|cabinet/.test(t)) return 'shelf';
+  if (/office|task|executive|computer|mesh/.test(t)) return 'office';
+  return 'other';
+}
+
+function parseCSV(text) {
+  const rows = []; let row = []; let cell = ''; let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+    else if (c === '"') { inQuotes = !inQuotes; }
+    else if (c === ',' && !inQuotes) { row.push(cell); cell = ''; }
+    else if ((c === '\n' || c === '\r') && !inQuotes) {
+      if (cell || row.length) { row.push(cell); rows.push(row); row = []; cell = ''; }
+      if (c === '\r' && text[i+1] === '\n') i++;
+    }
+    else { cell += c; }
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+// Get products: live (if available) > built-in. Sheet products always added.
+function getAllProducts() {
+  const websiteProducts = liveProducts.length > 0
+    ? liveProducts.map(p => ({ ...p, source: 'website' }))
+    : BUILTIN_PRODUCTS.map(p => ({ ...p, source: 'website' }));
+  return [...websiteProducts, ...sheetProducts.map(p => ({ ...p, source: 'sheet' }))];
+}
+
+function filterByCategory(products, category) {
+  if (!category) return products;
+  return products.filter(p => {
+    const haystack = (p.name + ' ' + p.tags + ' ' + (p.category || '')).toLowerCase();
+    return haystack.includes(category);
+  });
+}
+
+function searchProducts(query) {
+  const all = getAllProducts();
+  const q = query.toLowerCase().trim();
+  if (!q) return all;
+  const words = q.split(/\s+/);
+  return all.filter(p => {
+    const haystack = (p.name + ' ' + p.tags + ' ' + (p.category || '')).toLowerCase();
+    return words.some(w => w.length > 2 && haystack.includes(w));
+  });
+}
+
+
+// ================================================================
+// CONVERSATIONAL RESPONSE SYSTEM
+// Bot replies in chat instead of redirecting to site
+// ================================================================
+const RESPONSES = {
+  // Greetings & welcome
+  welcome: {
+    en: "Hi! 👋 Welcome to Oakcraft. I'm here to help with anything — products, prices, delivery, returns, or just to chat about what you're looking for.\n\nWhat brings you here today?",
+    hi: "नमस्ते! 👋 Oakcraft में आपका स्वागत है। मैं यहाँ आपकी मदद के लिए हूँ — प्रोडक्ट, कीमत, डिलीवरी, रिटर्न, या बस जानने के लिए।\n\nआज मैं आपकी क्या मदद करूँ?",
+    hinglish: "Namaste! 👋 Oakcraft mein aapka swagat hai. Main yahan aapki help ke liye hoon — products, price, delivery, returns, ya kuch bhi.\n\nAaj main aapki kya help karu?",
+    mr: "नमस्कार! 👋 Oakcraft मध्ये स्वागत. मी मदतीसाठी आहे — प्रोडक्ट, किंमत, डिलिव्हरी, रिटर्न.\n\nआज कशी मदत करू?",
+    gu: "નમસ્તે! 👋 Oakcraft માં સ્વાગત. હું મદદ માટે છું — પ્રોડક્ટ, કિંમત, ડિલિવરી, રિટર્ન.\n\nઆજે કેવી મદદ કરું?",
+    hr: "Ram Ram! 👋 Oakcraft mein swagat. Mhanne tu kit madat kar saku — product, daam, delivery, return jo bhi pucchna ho.\n\nAaj ke liye kya batau?"
+  },
+
+  greeting_response: {
+    en: "Hey! 😊 Glad you're here. Are you looking for a specific type of furniture, or want to browse our collection?",
+    hi: "हे! 😊 आपका स्वागत है। कोई खास फर्नीचर ढूँढ रहे हैं, या पूरा कलेक्शन देखना है?",
+    hinglish: "Hey! 😊 Welcome! Koi specific furniture chahiye, ya pura collection dekhna hai?",
+    mr: "नमस्कार! 😊 कोणते फर्निचर हवे आहे का?",
+    gu: "હાય! 😊 કયું ફર્નિચર જોઈએ છે?",
+    hr: "Ram Ram! 😊 Konsa furniture chahiye?"
+  },
+
+  how_are_you: {
+    en: "I'm doing great, thanks for asking! 😊 More importantly — how can I make your day better? Looking for something specific?",
+    hi: "मैं बढ़िया हूँ, पूछने के लिए शुक्रिया! 😊 बताइए, मैं आपकी क्या मदद कर सकता हूँ?",
+    hinglish: "Main badhiya hoon, thanks! 😊 Aap batao, kya help chahiye?",
+    mr: "मी छान आहे! 😊 तुम्हाला कशी मदत हवी आहे?",
+    gu: "હું મજામાં છું! 😊 તમારી શું મદદ કરું?",
+    hr: "Mhanne theek hai bhai! 😊 Tu bata, kya chahiye?"
+  },
+
+  // About the company
+  about: {
+    en: "Oakcraft makes quality furniture for every home — office chairs, gaming chairs, accent chairs, bookshelves, storage units, and more. Everything is built with sturdy materials and ships free across India with a 1-year warranty. 🪵\n\nWant me to show you something specific?",
+    hi: "Oakcraft हर घर के लिए क्वालिटी फर्नीचर बनाता है — ऑफिस चेयर, गेमिंग चेयर, एक्सेंट चेयर, बुकशेल्फ़, स्टोरेज, और बहुत कुछ। मज़बूत मटीरियल, पूरे भारत में फ्री शिपिंग, और 1 साल की वारंटी। 🪵\n\nकुछ खास दिखाऊँ?",
+    hinglish: "Oakcraft har ghar ke liye quality furniture banata hai — office chairs, gaming chairs, accent chairs, bookshelves, storage units, aur bahut kuch. Strong material, FREE shipping pure India mein, aur 1 saal ki warranty. 🪵\n\nKuch specific dikhau?",
+    mr: "Oakcraft सर्व प्रकारचे दर्जेदार फर्निचर बनवते — ऑफिस चेअर, गेमिंग, बुकशेल्फ. मजबूत मटेरियल, FREE शिपिंग, 1 वर्ष वॉरंटी. 🪵",
+    gu: "Oakcraft બધા પ્રકારનું ગુણવત્તાવાળું ફર્નિચર બનાવે છે — ઓફિસ ચેર, ગેમિંગ, બુકશેલ્ફ. મજબૂત મટિરિયલ, FREE શિપિંગ, 1 વર્ષ વોરંટી. 🪵",
+    hr: "Oakcraft hare ghar ke khaatir badhiya furniture banata hai — office chair, gaming, bookshelf, storage. Mazboot material, FREE shipping, 1 saal warranty. 🪵"
+  },
+
+  // Shipping
+  shipping: {
+    en: "Good news on shipping! ✓ FREE delivery on ALL orders across India\n✓ Most products reach you in 3–7 business days\n✓ Safe, sturdy packaging so nothing gets damaged\n✓ Tracking info sent to your email/phone\n\nIs there a specific product you're planning to order?",
+    hi: "डिलीवरी की अच्छी खबर! ✓ पूरे भारत में सभी ऑर्डर पर FREE डिलीवरी\n✓ ज़्यादातर प्रोडक्ट 3–7 कार्य दिवस में पहुँचते हैं\n✓ सुरक्षित और मज़बूत पैकेजिंग\n✓ ट्रैकिंग जानकारी ईमेल/फ़ोन पर\n\nकोई खास प्रोडक्ट ऑर्डर करने का सोच रहे हैं?",
+    hinglish: "Delivery ki good news! ✓ Pure India mein FREE delivery saare orders pe\n✓ Zyadatar products 3–7 business days mein pahunch jaate hain\n✓ Safe, strong packaging\n✓ Tracking info email/phone pe\n\nKoi specific product order karna hai?",
+    mr: "✓ संपूर्ण भारतात मोफत डिलिव्हरी\n✓ 3–7 कामकाजी दिवसांत\n✓ सुरक्षित पॅकेजिंग\n\nकोणते प्रोडक्ट हवे आहे?",
+    gu: "✓ સમગ્ર ભારતમાં મફત ડિલિવરી\n✓ 3–7 કાર્યદિવસમાં\n✓ સુરક્ષિત પૅકેજિંગ\n\nકયું પ્રોડક્ટ જોઈએ?",
+    hr: "✓ Pure Bharat mein FREE delivery\n✓ 3–7 din mein pahunch jaate\n✓ Safe packaging\n✓ Tracking info bhi mil jaata hai\n\nKonsa product chahiye?"
+  },
+
+  // Returns
+  returns: {
+    en: "Yes, we have a friendly return policy 😊\n\n✓ 10 days FREE replacement on most products\n✓ Just keep the original packaging\n✓ Easy process — no hassle\n\nIf you've got a specific order issue, share your Order ID and I'll see how I can help.",
+    hi: "हाँ, हमारी रिटर्न पॉलिसी आसान है 😊\n\n✓ ज़्यादातर प्रोडक्ट पर 10 दिन फ्री रिप्लेसमेंट\n✓ बस ओरिजिनल पैकेजिंग रखें\n✓ आसान प्रोसेस\n\nकोई खास ऑर्डर का इश्यू है? Order ID शेयर करें, मैं देखता हूँ।",
+    hinglish: "Haan, hamari return policy easy hai 😊\n\n✓ Zyadatar products pe 10 days FREE replacement\n✓ Bas original packaging rakhein\n✓ Easy process — no hassle\n\nKoi specific order ka issue hai? Order ID share karein, main dekhta hoon.",
+    mr: "हो, रिटर्न पॉलिसी सोपी आहे 😊\n\n✓ 10 दिवस मोफत रिप्लेसमेंट\n✓ मूळ पॅकेजिंग ठेवा\n\nऑर्डर ID शेअर करा.",
+    gu: "હા, રિટર્ન સરળ છે 😊\n\n✓ 10 દિવસ મફત રિપ્લેસમેન્ટ\n✓ મૂળ પૅકેજિંગ રાખો\n\nOrder ID શેર કરો.",
+    hr: "Haan, return easy hai 😊\n\n✓ 10 din free replacement\n✓ Bas packaging rakh lo\n\nOrder ID bata de, dekh lunga."
+  },
+
+  warranty: {
+    en: "Yes, all our furniture comes with at least 1 year warranty against manufacturing defects. 🛡️\n\nIf something goes wrong, we'll fix or replace it. Just register your warranty after delivery — I can guide you through it. Want me to?",
+    hi: "हाँ, सभी फर्नीचर पर कम से कम 1 साल की वारंटी है — मैन्युफैक्चरिंग डिफेक्ट के लिए। 🛡️\n\nकुछ गड़बड़ हो तो हम ठीक करेंगे या बदल देंगे। डिलीवरी के बाद वारंटी रजिस्टर करनी होती है। मैं बता दूँ कैसे?",
+    hinglish: "Haan, sabhi furniture pe minimum 1 saal ki warranty hai. 🛡️\n\nKuch issue ho to hum theek karenge ya replace. Delivery ke baad warranty register karni hoti hai. Main bata du kaise?",
+    mr: "हो, सर्व फर्निचरवर 1 वर्ष वॉरंटी. 🛡️ काही समस्या असल्यास आम्ही दुरुस्त करू.",
+    gu: "હા, બધા ફર્નિચર પર 1 વર્ષ વોરંટી. 🛡️ સમસ્યા હોય તો અમે સુધારશું.",
+    hr: "Haan, sabhi furniture pe 1 saal warranty hai. 🛡️ Kuch dikkat ho to bata dena."
+  },
+
+  price_general: {
+    en: "Our prices are competitive! 💰\n\n• Storage shelves & bookshelves: ₹2,599–₹6,499\n• Office chairs: ₹5,399–₹8,999\n• Gaming chairs: ₹8,400–₹8,499\n• Accent/dining chair sets: ₹5,999–₹17,999\n\nWhat type of furniture are you interested in? I can show you specific products.",
+    hi: "हमारी कीमतें वाजिब हैं! 💰\n\n• स्टोरेज और बुकशेल्फ़: ₹2,599–₹6,499\n• ऑफिस चेयर: ₹5,399–₹8,999\n• गेमिंग चेयर: ₹8,400–₹8,499\n• एक्सेंट/डाइनिंग सेट: ₹5,999–₹17,999\n\nकिस तरह का फर्नीचर चाहिए? मैं प्रोडक्ट दिखा सकता हूँ।",
+    hinglish: "Hamari prices reasonable hain! 💰\n\n• Storage & bookshelf: ₹2,599–₹6,499\n• Office chairs: ₹5,399–₹8,999\n• Gaming chairs: ₹8,400–₹8,499\n• Accent/dining sets: ₹5,999–₹17,999\n\nKaisa furniture chahiye? Main products dikha sakta hoon.",
+    mr: "किंमती परवडणाऱ्या आहेत! 💰\n\n• बुकशेल्फ: ₹2,599–₹6,499\n• ऑफिस चेअर: ₹5,399–₹8,999\n• गेमिंग: ₹8,400–₹8,499\n\nकोणते फर्निचर हवे?",
+    gu: "કિંમતો વાજબી છે! 💰\n\n• બુકશેલ્ફ: ₹2,599–₹6,499\n• ઓફિસ ચેર: ₹5,399–₹8,999\n• ગેમિંગ: ₹8,400–₹8,499\n\nકયું ફર્નિચર જોઈએ?",
+    hr: "Daam theek hain! 💰\n\n• Bookshelf: ₹2,599–₹6,499\n• Office chair: ₹5,399–₹8,999\n• Gaming: ₹8,400–₹8,499\n\nKonsa furniture chahiye?"
+  },
+
+  bulk_order: {
+    en: "Yes, we definitely do bulk orders! 📦 Whether it's for an office, restaurant, hotel, or home setup — we offer special pricing for bulk.\n\nHow many pieces are you thinking of, and what type of furniture? I can give you a rough idea, and our team will follow up with the exact quote.",
+    hi: "हाँ, हम बल्क ऑर्डर भी लेते हैं! 📦 ऑफिस, रेस्टोरेंट, होटल, या घर के लिए — स्पेशल प्राइसिंग देते हैं।\n\nकितने पीस चाहिए और कैसा फर्नीचर? मैं अंदाज़ा दे सकता हूँ, और हमारी टीम सही quote देगी।",
+    hinglish: "Haan, bulk orders karte hain! 📦 Office, restaurant, hotel, ya ghar ke liye — special pricing dete hain.\n\nKitne pieces chahiye aur kaisa furniture? Main rough idea de sakta hoon, team exact quote degi.",
+    mr: "हो, बल्क ऑर्डरसाठी विशेष किंमत. 📦 किती तुकडे हवे आहेत?",
+    gu: "હા, બલ્ક ઓર્ડર પર સ્પેશિયલ પ્રાઇસ. 📦 કેટલા ટુકડા જોઈએ?",
+    hr: "Haan, bulk order pe khaas daam dete hain. 📦 Kitne piece chahiye?"
+  },
+
+  contact: {
+    en: "You can reach us anytime! 📞\n\n• Phone: " + CONFIG.contact.phone + "\n• Email: " + CONFIG.contact.email + "\n• WhatsApp: tap the green button below\n\nOr just tell me here — I'll do my best to help!",
+    hi: "आप हमसे कभी भी संपर्क कर सकते हैं! 📞\n\n• फ़ोन: " + CONFIG.contact.phone + "\n• ईमेल: " + CONFIG.contact.email + "\n• WhatsApp: नीचे हरा बटन\n\nया यहीं बता दें — मैं मदद करूँगा!",
+    hinglish: "Aap humse kabhi bhi contact kar sakte hain! 📞\n\n• Phone: " + CONFIG.contact.phone + "\n• Email: " + CONFIG.contact.email + "\n• WhatsApp: neeche green button\n\nYa yahin bata dein — main help karunga!",
+    mr: "📞 " + CONFIG.contact.phone + "\n📧 " + CONFIG.contact.email + "\nWhatsApp खाली हिरवे बटण.",
+    gu: "📞 " + CONFIG.contact.phone + "\n📧 " + CONFIG.contact.email + "\nWhatsApp નીચે લીલું બટન.",
+    hr: "📞 " + CONFIG.contact.phone + "\n📧 " + CONFIG.contact.email + "\nWhatsApp neeche green button."
+  },
+
+  order_track: {
+    en: "Sure, I can help track your order! 📦 Please share:\n• Your Order ID (like #1234)\n• Registered phone number\n\nOr if it's urgent, tap WhatsApp below — our team can check it instantly.",
+    hi: "ज़रूर, मैं ऑर्डर ट्रैक करने में मदद करूँगा! 📦 कृपया शेयर करें:\n• Order ID (जैसे #1234)\n• रजिस्टर्ड फ़ोन नंबर\n\nजल्दी हो तो नीचे WhatsApp टैप करें — टीम तुरंत चेक करेगी।",
+    hinglish: "Sure, order track karne mein help karunga! 📦 Please share:\n• Order ID (jaise #1234)\n• Registered phone number\n\nUrgent ho to neeche WhatsApp tap karein — team turant check karegi.",
+    mr: "ऑर्डर ट्रॅक करण्यासाठी Order ID आणि नंबर शेअर करा. किंवा खाली WhatsApp टॅप करा.",
+    gu: "ઓર્ડર ટ્રેક માટે Order ID અને નંબર શેર કરો. અથવા નીચે WhatsApp.",
+    hr: "Order track ke khaatir Order ID aur number bata de. Ya neeche WhatsApp."
+  },
+
+  discount: {
+    en: "Yes! 🎉 Use code FIRST5 at checkout for 5% OFF on your first order.\n\nWe also run seasonal sales — keep an eye out, or follow @oakcraftfurniture on Instagram for offers.",
+    hi: "हाँ! 🎉 पहले ऑर्डर पर 5% की छूट — कोड: FIRST5 चेकआउट पर।\n\nसीज़नल सेल भी चलते हैं — Instagram पर @oakcraftfurniture फॉलो करें।",
+    hinglish: "Haan! 🎉 First order pe 5% OFF — code FIRST5 checkout pe.\n\nSeasonal sales bhi chalte hain — Instagram pe @oakcraftfurniture follow karein.",
+    mr: "🎉 पहिल्या ऑर्डरवर 5% सूट — कोड: FIRST5",
+    gu: "🎉 પહેલા ઓર્ડર પર 5% છૂટ — કોડ: FIRST5",
+    hr: "🎉 Pehle order pe 5% chhoot — code: FIRST5"
+  },
+
+  thanks: {
+    en: "You're so welcome! 😊 Happy to help. Anything else I can do for you?",
+    hi: "आपका स्वागत है! 😊 मदद करके खुशी हुई। और कुछ?",
+    hinglish: "Aapka swagat hai! 😊 Help karke khushi hui. Aur kuch?",
+    mr: "तुमचे स्वागत! 😊 आणखी काही?",
+    gu: "આપનું સ્વાગત! 😊 બીજું કંઈ?",
+    hr: "Tera swagat! 😊 Aur kuch?"
+  },
+
+  bye: {
+    en: "Take care! 🪵 Thanks for chatting with Oakcraft. Come back anytime — I'm always here.",
+    hi: "अलविदा! 🪵 Oakcraft से बात करने के लिए शुक्रिया। कभी भी वापस आइए।",
+    hinglish: "Bye! 🪵 Oakcraft se baat karne ke liye thanks. Kabhi bhi wapas aa sakte hain.",
+    mr: "बाय! 🪵 परत येऊ शकता.",
+    gu: "આવજો! 🪵 ફરી આવજો.",
+    hr: "Bye bhai! 🪵 Phir aana."
+  },
+
+  yes_response: {
+    en: "Great! What would you like to see?",
+    hi: "बढ़िया! क्या देखना चाहेंगे?",
+    hinglish: "Badhiya! Kya dekhna chahenge?",
+    mr: "छान! काय बघायचे?",
+    gu: "સરસ! શું જોવું છે?",
+    hr: "Badhiya! Kya dekhna hai?"
+  },
+
+  fallback: {
+    en: "Hmm, I want to make sure I help you right. Could you tell me a bit more about what you're looking for? Or pick one of these:",
+    hi: "हम्म, मैं सही से मदद करना चाहता हूँ। थोड़ा और बता सकते हैं? या इनमें से चुनें:",
+    hinglish: "Hmm, main sahi se help karna chahta hoon. Thoda aur bata sakte hain? Ya in mein se choose karein:",
+    mr: "जरा अधिक माहिती द्या किंवा यापैकी निवडा:",
+    gu: "વધુ માહિતી આપો અથવા આમાંથી પસંદ કરો:",
+    hr: "Thoda aur bata, ya in mein se chun le:"
+  },
+
+  fallback_quick: {
+    en: ["Show all products", "Pricing", "Shipping & delivery", "Returns policy", "Contact"],
+    hi: ["सभी प्रोडक्ट", "कीमत", "शिपिंग", "रिटर्न", "संपर्क"],
+    hinglish: ["Saare products", "Price", "Shipping", "Returns", "Contact"],
+    mr: ["सर्व प्रोडक्ट", "किंमत", "शिपिंग", "रिटर्न", "संपर्क"],
+    gu: ["બધા પ્રોડક્ટ", "કિંમત", "શિપિંગ", "રિટર્ન", "સંપર્ક"],
+    hr: ["Saare product", "Daam", "Shipping", "Returns", "Contact"]
+  },
+
+  no_products_found: {
+    en: "I couldn't find that exact item, but here are some similar options you might like:",
+    hi: "वो खास आइटम नहीं मिला, पर ये मिलते-जुलते ऑप्शन देख सकते हैं:",
+    hinglish: "Wo exact item nahi mila, lekin ye similar options dekh sakte hain:",
+    mr: "ते मिळाले नाही, पण हे पर्याय बघा:",
+    gu: "એ ન મળ્યું, પણ આ વિકલ્પો જુઓ:",
+    hr: "Wo nahi mila, par ye dekh le:"
+  },
+
+  showing_products: {
+    en: "Here you go! Tap any product to see full details on our site:",
+    hi: "ये देखिए! किसी भी प्रोडक्ट पर टैप करके पूरी जानकारी देखें:",
+    hinglish: "Ye dekhiye! Kisi bhi product pe tap karke full details dekh sakte hain:",
+    mr: "हे पहा! कोणत्याही प्रोडक्टवर टॅप करा:",
+    gu: "આ જુઓ! કોઈપણ પ્રોડક્ટ પર ટૅપ કરો:",
+    hr: "Ye dekh! Kisi bhi pe tap kar le:"
+  },
+
+  category_intro: {
+    office: {
+      en: "Here are our office chairs — comfortable for long work hours, with ergonomic support and easy assembly:",
+      hi: "ये हैं हमारी ऑफिस चेयर — लंबे काम के घंटों के लिए आरामदायक:",
+      hinglish: "Ye hain hamari office chairs — long work hours ke liye comfortable:",
+      mr: "ऑफिस चेअर — आरामदायक:",
+      gu: "ઓફિસ ચેર — આરામદાયક:",
+      hr: "Office chair — aaramdayak:"
+    },
+    gaming: {
+      en: "Check out our gaming chairs — designed for long sessions with great back support:",
+      hi: "हमारी गेमिंग चेयर देखिए — लंबी सेशन के लिए बढ़िया सपोर्ट:",
+      hinglish: "Hamari gaming chairs dekhiye — long sessions ke liye great support:",
+      mr: "गेमिंग चेअर पहा:",
+      gu: "ગેમિંગ ચેર જુઓ:",
+      hr: "Gaming chair dekh le:"
+    },
+    shelf: {
+      en: "Here are our bookshelves and storage units — sturdy engineered wood, stylish designs:",
+      hi: "ये हमारी बुकशेल्फ़ और स्टोरेज — मज़बूत इंजीनियर्ड वुड:",
+      hinglish: "Ye hamari bookshelves aur storage units — strong engineered wood:",
+      mr: "बुकशेल्फ आणि स्टोरेज:",
+      gu: "બુકશેલ્ફ અને સ્ટોરેજ:",
+      hr: "Bookshelf aur storage:"
+    },
+    accent: {
+      en: "Our accent and dining chairs — perfect for living rooms, dining areas, or that statement corner:",
+      hi: "एक्सेंट और डाइनिंग चेयर — लिविंग रूम और डाइनिंग के लिए परफेक्ट:",
+      hinglish: "Accent aur dining chairs — living room aur dining ke liye perfect:",
+      mr: "अॅक्सेंट आणि डायनिंग चेअर:",
+      gu: "એક્સેંટ અને ડાઇનિંગ ચેર:",
+      hr: "Accent aur dining chair:"
+    },
+    stool: {
+      en: "Our bar stools — modern design, sturdy build:",
+      hi: "बार स्टूल — मॉडर्न डिज़ाइन:",
+      hinglish: "Bar stools — modern design:",
+      mr: "बार स्टूल:",
+      gu: "બાર સ્ટૂલ:",
+      hr: "Bar stool:"
+    },
+    recliner: {
+      en: "Our recliners — ultimate relaxation for your living room:",
+      hi: "रिक्लाइनर — आपके लिविंग रूम के लिए अल्टीमेट कम्फर्ट:",
+      hinglish: "Recliners — ultimate comfort:",
+      mr: "रिक्लायनर:",
+      gu: "રિક્લાઇનર:",
+      hr: "Recliner:"
+    }
+  }
+};
+
+
+// ================================================================
+// LANGUAGE DETECTION
+// ================================================================
+function detectLanguage(text) {
+  const t = text.trim();
+  if (!t) return 'en';
+
+  const devanagari = (t.match(/[\u0900-\u097F]/g) || []).length;
+  const gujarati = (t.match(/[\u0A80-\u0AFF]/g) || []).length;
+  const totalChars = t.replace(/\s/g, '').length || 1;
+
+  if (gujarati / totalChars > 0.3) return 'gu';
+  if (devanagari / totalChars > 0.3) {
+    const marathiMarkers = /\b(आहे|काय|कसा|कसे|कशी|तुम्ही|आम्ही|करू|दाखवा|पाहिजे|बद्दल|पण|खूप)\b/;
+    if (marathiMarkers.test(t)) return 'mr';
+    return 'hi';
+  }
+
+  const haryanviStrong = /\b(mhanne|mhaari|mhaare|kit hai|ke khaatir|raam raam)\b/i;
+  const hinglishMarkers = /\b(hai|hain|kya|kaise|kahan|kab|main|aap|tum|hum|nahi|chahiye|karein|kar|raha|haan|theek|accha|bahut|kuch|aur|kyun|matlab|namaste|shukriya|kripya|abhi|order|product|dikhao|bechte|kursi|kitne|daam|saman|yaar|bhai|chalo|batao|sahi|galat|bilkul|zaroor)\b/i;
+
+  if (haryanviStrong.test(t)) return 'hr';
+  if (hinglishMarkers.test(t)) return 'hinglish';
+  return 'en';
+}
+
+
+// ================================================================
+// INTENT DETECTION (much smarter)
+// ================================================================
+function detectIntent(message) {
+  const m = message.toLowerCase().trim();
+
+  // Greetings
+  if (/^(hi|hello|hey|namaste|namaskar|namastey|ram ram|salaam|kem cho|hii+|helo)/i.test(m)) {
+    return { type: 'greeting' };
+  }
+  if (/how are you|kaise ho|kaisa hai|kya haal|kasa aahes|kem cho/i.test(m)) {
+    return { type: 'how_are_you' };
+  }
+
+  // About company
+  if (/about (you|us|oakcraft|company)|tell me about|company (kya|details)|aap kaun|who are you|tumhi kon|kon ho/i.test(m)) {
+    return { type: 'about' };
+  }
+
+  // Product categories — most specific first
+  if (/gaming|gamer|racing chair|गेमिंग|ગેમિંગ/i.test(m)) {
+    return { type: 'show_products', category: 'gaming' };
+  }
+  if (/recliner|रिक्लाइनर|રિક્લાઇનર/i.test(m)) {
+    return { type: 'show_products', category: 'recliner' };
+  }
+  if (/bar stool|stool|स्टूल|સ્ટૂલ/i.test(m)) {
+    return { type: 'show_products', category: 'stool' };
+  }
+  if (/accent chair|dining chair|lounge|living room chair|एक्सेंट|लाउंज|डाइनिंग|ડાઇનિંગ|લાઉન્જ|jevnachi/i.test(m)) {
+    return { type: 'show_products', category: 'accent' };
+  }
+  if (/bookshelf|book shelf|shelf|shelves|storage|rack|bookcase|almari|बुकशेल्फ|अलमारी|स्टोरेज|રેક|બુકશેલ્ફ/i.test(m)) {
+    return { type: 'show_products', category: 'shelf' };
+  }
+  if (/office chair|executive chair|task chair|computer chair|mesh chair|ऑफिस चेयर|ऑफिस कुर्सी|ऑફિસ ખુરશી|office ki kursi/i.test(m)) {
+    return { type: 'show_products', category: 'office' };
+  }
+  if (/chair|kursi|कुर्सी|खुर्ची|ખુરશી|खुर्शी/i.test(m)) {
+    return { type: 'show_products', category: 'office' }; // default chair = office
+  }
+
+  // Show all
+  if (/all products|saare products|sab dikha|पूरा|सभी|बધા|all furniture|catalog|product list|kya bechte|kya available|browse|sab kuch|everything|पूरा सामान/i.test(m)) {
+    return { type: 'show_products', category: null };
+  }
+
+  // Search by keyword
+  const productSearch = m.match(/(?:looking for|chahiye|chaiye|need|want|chahta|chahti|दिखाओ|hawa|joiye)\s+(\w+)/i);
+  if (productSearch) {
+    return { type: 'search', query: productSearch[1] };
+  }
+
+  // Service intents
+  if (/shipping|delivery|deliver|ship|कब (पहुँच|आ|मिल)|डिलीवरी|शिपिंग|ડિલિવરી|kab milega|kab pahunchega|delivery charges/i.test(m)) {
+    return { type: 'shipping' };
+  }
+  if (/return|refund|exchange|replace|वापसी|रिटर्न|રિટર્ન|wapsi|paisa wapas|paise wapas|defective/i.test(m)) {
+    return { type: 'returns' };
+  }
+  if (/warranty|guarantee|वारंटी|गारंटी|વોરંટી/i.test(m)) {
+    return { type: 'warranty' };
+  }
+  if (/price|cost|how much|kitne|kitna|rate|कीमत|दाम|किंमत|કિંમત|kitne ka|kitne mein|daam/i.test(m)) {
+    return { type: 'price_general' };
+  }
+  if (/bulk|wholesale|corporate|थोक|बल्क|બલ્ક|office order|hotel|restaurant|many pieces/i.test(m)) {
+    return { type: 'bulk_order' };
+  }
+  if (/contact|phone|email|call|कॉन्टैक्ट|फ़ोन|baat karni|talk to/i.test(m)) {
+    return { type: 'contact' };
+  }
+  if (/track|order status|where is my order|mera order|ऑर्डर कहाँ|मेरा ऑर्डर|order kahan/i.test(m)) {
+    return { type: 'order_track' };
+  }
+  if (/discount|offer|coupon|sale|deal|छूट|डिस्काउंट|ઑફર|chhoot/i.test(m)) {
+    return { type: 'discount' };
+  }
+  if (/thank|शुक्रिया|धन्यवाद|shukriya|આભાર|thnks|tnx/i.test(m)) {
+    return { type: 'thanks' };
+  }
+  if (/^(bye|goodbye|tata|alvida|अलविदा|आवजો)\b/i.test(m)) {
+    return { type: 'bye' };
+  }
+  if (/^(yes|yeah|haan|haa|ji|sure|ok|okay|theek|hoy|હા)\b/i.test(m)) {
+    return { type: 'yes_response' };
+  }
+
+  // Fallback: try product search if message is short
+  if (m.length > 0 && m.length < 30) {
+    return { type: 'search', query: m };
+  }
+
+  return { type: 'fallback' };
+}
+
+
+// ================================================================
+// CHAT UI
+// ================================================================
+const launcher = document.getElementById('oc-launcher');
+const waLauncher = document.getElementById('oc-wa-launcher');
+const waHeaderBtn = document.getElementById('oc-wa-header');
+const chat = document.getElementById('oc-chat');
+const closeBtn = document.getElementById('oc-close');
+const messagesEl = document.getElementById('oc-messages');
+const input = document.getElementById('oc-input');
+const sendBtn = document.getElementById('oc-send');
+const micBtn = document.getElementById('oc-mic');
+const langSelect = document.getElementById('oc-lang');
+const badgeEl = document.getElementById('oc-badge');
+
+let chatStarted = false;
+let currentLang = 'en';
+let conversationHistory = [];  // Track context
+
+function getLang(userMessage) {
+  const selected = langSelect.value;
+  if (selected !== 'auto') return selected;
+  if (userMessage) return detectLanguage(userMessage);
+  return currentLang;
+}
+
+function R(key, lang) {
+  const r = RESPONSES[key];
+  if (!r) return '';
+  return r[lang] || r.en || '';
+}
+
+if (CONFIG.showWelcomeBadge) {
+  setTimeout(() => { if (!chatStarted) badgeEl.style.display = 'flex'; }, CONFIG.welcomeBadgeDelay);
+}
+
+launcher.addEventListener('click', openChat);
+
+function openChat() {
+  chat.classList.add('open');
+  badgeEl.style.display = 'none';
+  if (!chatStarted) {
+    chatStarted = true;
+    setTimeout(() => {
+      addBotMessage(R('welcome', currentLang));
+      addQuickReplies(R('fallback_quick', currentLang) || RESPONSES.fallback_quick.en);
+    }, 350);
+    setTimeout(() => input.focus(), 500);
+  }
+}
+
+function closeChat() {
+  chat.classList.add('closing');
+  setTimeout(() => { chat.classList.remove('open', 'closing'); }, 250);
+}
+
+closeBtn.addEventListener('click', closeChat);
+waLauncher.addEventListener('click', () => openWhatsApp());
+waHeaderBtn.addEventListener('click', () => openWhatsApp());
+
+langSelect.addEventListener('change', (e) => {
+  currentLang = e.target.value === 'auto' ? 'en' : e.target.value;
+  input.placeholder = {
+    en: 'Type your question...',
+    hi: 'अपना सवाल लिखें...',
+    hinglish: 'Apna sawal likhein...',
+    mr: 'तुमचा प्रश्न लिहा...',
+    gu: 'તમારો પ્રશ્ન લખો...',
+    hr: 'Apna sawal likh de...'
+  }[currentLang] || 'Type your question...';
+});
+
+function buildWhatsAppUrl(customMessage = null) {
+  const msg = customMessage || CONFIG.whatsappDefaultMessage;
+  return `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`;
+}
+function openWhatsApp(customMessage = null) {
+  window.open(buildWhatsAppUrl(customMessage), '_blank', 'noopener');
+}
+
+function addBotMessage(text) {
+  const msg = document.createElement('div');
+  msg.className = 'oc-msg bot';
+  msg.innerHTML = linkify(escapeHtml(text)).replace(/\n/g, '<br>');
+  messagesEl.appendChild(msg);
+  scrollToBottom();
+}
+
+function addQuickReplies(replies) {
+  if (!replies || !replies.length) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'oc-quick-replies';
+  replies.forEach(qr => {
+    const btn = document.createElement('button');
+    btn.textContent = qr;
+    btn.addEventListener('click', () => {
+      wrap.remove();
+      sendUserMessage(qr);
+    });
+    wrap.appendChild(btn);
+  });
+  messagesEl.appendChild(wrap);
+  scrollToBottom();
+}
+
+function addProductCards(products) {
+  if (!products || !products.length) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'oc-products';
+  products.forEach(p => {
+    const card = document.createElement('a');
+    card.className = 'oc-product';
+    card.href = p.url;
+    card.target = '_blank';
+    card.rel = 'noopener';
+    card.innerHTML = `
+      <img src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" onerror="this.style.background='#ebe2d3';this.removeAttribute('src')">
+      <div class="oc-product-info">
+        <h4>${escapeHtml(p.name)}</h4>
+        <div class="oc-product-bottom">
+          <div class="oc-product-price">${escapeHtml(p.price)}${p.comparePrice ? `<span class="compare">${escapeHtml(p.comparePrice)}</span>` : ''}</div>
+          <span class="oc-product-source ${p.source === 'sheet' ? 'sheet' : ''}">${p.source === 'sheet' ? '📊' : '🌐'}</span>
+        </div>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+  messagesEl.appendChild(wrap);
+  scrollToBottom();
+}
+
+function addWhatsAppCTA(lang = 'en') {
+  const cta = {
+    en: { title: "Chat on WhatsApp", subtitle: "Talk directly to our team" },
+    hi: { title: "WhatsApp पर चैट करें", subtitle: "हमारी टीम से सीधे बात करें" },
+    hinglish: { title: "WhatsApp pe chat karein", subtitle: "Hamari team se direct baat karein" },
+    mr: { title: "WhatsApp वर चॅट करा", subtitle: "थेट बोला" },
+    gu: { title: "WhatsApp પર ચેટ કરો", subtitle: "સીધી વાત કરો" },
+    hr: { title: "WhatsApp pe chat kar", subtitle: "Seedhi baat kar" }
+  }[lang] || { title: "Chat on WhatsApp", subtitle: "Talk directly to our team" };
+
+  const link = document.createElement('a');
+  link.className = 'oc-wa-cta';
+  link.href = buildWhatsAppUrl();
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.innerHTML = `
+    <div class="oc-wa-cta-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.9L4 20l4.2-1.1a7.93 7.93 0 0 0 3.84.98h.01a7.94 7.94 0 0 0 7.94-7.94 7.9 7.9 0 0 0-2.39-5.62z"/>
+      </svg>
+    </div>
+    <div class="oc-wa-cta-text">
+      <strong>${escapeHtml(cta.title)}</strong>
+      <small>${escapeHtml(cta.subtitle)}</small>
+    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+    </svg>
+  `;
+  messagesEl.appendChild(link);
+  scrollToBottom();
+}
+
+function addUserMessage(text) {
+  const msg = document.createElement('div');
+  msg.className = 'oc-msg user';
+  msg.textContent = text;
+  messagesEl.appendChild(msg);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const typing = document.createElement('div');
+  typing.className = 'oc-typing';
+  typing.id = 'oc-typing-indicator';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  messagesEl.appendChild(typing);
+  scrollToBottom();
+}
+function hideTyping() {
+  const t = document.getElementById('oc-typing-indicator');
+  if (t) t.remove();
+}
+
+function scrollToBottom() {
+  setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 50);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = String(text);
+  return div.innerHTML;
+}
+function escapeAttr(text) { return String(text).replace(/"/g, '&quot;'); }
+function linkify(text) {
+  return text.replace(/(oakcraft\.in[^\s<,]*)/g, '<a href="https://$1" target="_blank" rel="noopener">$1</a>')
+             .replace(/(forms\.gle[^\s<,]*)/g, '<a href="https://$1" target="_blank" rel="noopener">$1</a>');
+}
+
+
+// ================================================================
+// MAIN MESSAGE HANDLER
+// ================================================================
+async function sendUserMessage(text) {
+  if (!text.trim()) return;
+  addUserMessage(text);
+  input.value = '';
+  input.style.height = 'auto';
+
+  const lang = getLang(text);
+  currentLang = lang;
+  conversationHistory.push({ role: 'user', text, lang });
+
+  showTyping();
+  await new Promise(r => setTimeout(r, 500 + Math.random() * 400));
+  hideTyping();
+
+  const intent = detectIntent(text);
+
+  switch (intent.type) {
+    case 'greeting':
+      addBotMessage(R('greeting_response', lang));
+      break;
+
+    case 'how_are_you':
+      addBotMessage(R('how_are_you', lang));
+      break;
+
+    case 'about':
+      addBotMessage(R('about', lang));
+      addQuickReplies(R('fallback_quick', lang));
+      break;
+
+    case 'show_products': {
+      const intro = intent.category && RESPONSES.category_intro[intent.category]
+        ? RESPONSES.category_intro[intent.category][lang] || RESPONSES.category_intro[intent.category].en
+        : R('showing_products', lang);
+      addBotMessage(intro);
+      const products = filterByCategory(getAllProducts(), intent.category).slice(0, CONFIG.maxProducts);
+      if (products.length) addProductCards(products);
+      else {
+        addBotMessage(R('no_products_found', lang));
+        addProductCards(getAllProducts().slice(0, 4));
+      }
+      break;
+    }
+
+    case 'search': {
+      const results = searchProducts(intent.query);
+      if (results.length) {
+        addBotMessage(R('showing_products', lang));
+        addProductCards(results.slice(0, CONFIG.maxProducts));
+      } else {
+        addBotMessage(R('fallback', lang));
+        addQuickReplies(R('fallback_quick', lang));
+      }
+      break;
+    }
+
+    case 'shipping':
+      addBotMessage(R('shipping', lang));
+      break;
+    case 'returns':
+      addBotMessage(R('returns', lang));
+      break;
+    case 'warranty':
+      addBotMessage(R('warranty', lang));
+      break;
+    case 'price_general':
+      addBotMessage(R('price_general', lang));
+      addQuickReplies(R('fallback_quick', lang));
+      break;
+    case 'bulk_order':
+      addBotMessage(R('bulk_order', lang));
+      addWhatsAppCTA(lang);
+      break;
+    case 'contact':
+      addBotMessage(R('contact', lang));
+      addWhatsAppCTA(lang);
+      break;
+    case 'order_track':
+      addBotMessage(R('order_track', lang));
+      addWhatsAppCTA(lang);
+      break;
+    case 'discount':
+      addBotMessage(R('discount', lang));
+      break;
+    case 'thanks':
+      addBotMessage(R('thanks', lang));
+      break;
+    case 'bye':
+      addBotMessage(R('bye', lang));
+      break;
+    case 'yes_response':
+      addBotMessage(R('yes_response', lang));
+      addQuickReplies(R('fallback_quick', lang));
+      break;
+    case 'fallback':
+    default:
+      addBotMessage(R('fallback', lang));
+      addQuickReplies(R('fallback_quick', lang));
+      break;
+  }
+
+  conversationHistory.push({ role: 'bot', intent: intent.type, lang });
+}
+
+sendBtn.addEventListener('click', () => sendUserMessage(input.value));
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendUserMessage(input.value);
+  }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+});
+
+
+// ================================================================
+// VOICE INPUT
+// ================================================================
+let recognition = null;
+let isRecording = false;
+
+function initVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    micBtn.style.display = 'none';
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    micBtn.classList.add('recording');
+    input.placeholder = { en: 'Listening...', hi: 'सुन रहा हूँ...', hinglish: 'Sun raha hoon...', mr: 'ऐकत आहे...', gu: 'સાંભળી રહ્યો છું...', hr: 'Sun raha hoon...' }[currentLang] || 'Listening...';
+  };
+  recognition.onend = () => {
+    isRecording = false;
+    micBtn.classList.remove('recording');
+    input.placeholder = { en: 'Type your question...', hi: 'अपना सवाल लिखें...', hinglish: 'Apna sawal likhein...', mr: 'तुमचा प्रश्न लिहा...', gu: 'તમારો પ્રશ્ન લખો...', hr: 'Apna sawal likh de...' }[currentLang] || 'Type your question...';
+  };
+  recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = 0; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+    input.value = transcript;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    if (event.results[event.results.length - 1].isFinal) {
+      setTimeout(() => sendUserMessage(transcript), 300);
+    }
+  };
+  recognition.onerror = () => {
+    isRecording = false;
+    micBtn.classList.remove('recording');
+  };
+}
+initVoiceInput();
+
+micBtn.addEventListener('click', () => {
+  if (!recognition) return;
+  if (isRecording) { recognition.stop(); return; }
+  const langMap = { en: 'en-IN', hi: 'hi-IN', hinglish: 'en-IN', mr: 'mr-IN', gu: 'gu-IN', hr: 'hi-IN' };
+  recognition.lang = langMap[currentLang] || 'en-IN';
+  try { recognition.start(); } catch(e) {}
+});
+
+// Try live fetches in background (silent if fails)
+tryFetchLiveProducts();
+tryFetchSheetProducts();
+</script>
+
+</body>
+</html>
